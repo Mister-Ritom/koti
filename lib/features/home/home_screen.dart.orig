@@ -1,0 +1,312 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/design/koti_colors.dart';
+import '../../core/design/koti_radii.dart';
+import '../../core/design/koti_spacing.dart';
+import '../../providers/balance_providers.dart';
+import '../../providers/transaction_providers.dart';
+import '../../data/database/app_database.dart';
+import '../transactions/widgets/add_transaction_sheet.dart';
+
+class HomeScreen extends ConsumerWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: KotiSpacing.l, vertical: KotiSpacing.m),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('My Wallet', style: Theme.of(context).textTheme.titleLarge),
+                      Text('Welcome Back', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: KotiColors.darkTextSecondary)),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? KotiColors.darkSurface 
+                          : KotiColors.lightSurface,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(KotiSpacing.s),
+                    child: const Icon(Icons.notifications_outlined),
+                  )
+                ],
+              ),
+            ),
+            
+            // Balance Card
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: KotiSpacing.l),
+              child: _BalanceCard(),
+            ),
+            
+            const SizedBox(height: KotiSpacing.l),
+            
+            // Quick Actions
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: KotiSpacing.l),
+              child: _QuickActionsRow(),
+            ),
+            
+            const SizedBox(height: KotiSpacing.xl),
+            
+            // Transactions Sheet
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white // White sheet in dark mode per reference
+                      : KotiColors.lightSurface,
+                  borderRadius: KotiRadii.bottomSheet,
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(KotiSpacing.l),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Transactions', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.black, // Force black text on white sheet
+                          )),
+                          Text('See all', style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.black54,
+                          )),
+                        ],
+                      ),
+                    ),
+                    const Expanded(
+                      child: _TransactionList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BalanceCard extends ConsumerWidget {
+  const _BalanceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final balance = ref.watch(currentBalanceProvider);
+    final formattedBalance = NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(balance);
+
+    return Container(
+      padding: const EdgeInsets.all(KotiSpacing.l),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary, // Pastel pink
+        borderRadius: KotiRadii.roundedXLarge,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Icon(Icons.account_balance_wallet, color: Colors.black, size: 28),
+              Text('Available', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.black87)),
+            ],
+          ),
+          const SizedBox(height: KotiSpacing.xl),
+          Center(
+            child: Text(
+              formattedBalance,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.black),
+            ),
+          ),
+          const SizedBox(height: KotiSpacing.xl),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Koti Tracker', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black87)),
+              Text('Active', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.black87)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildAction(
+          context, 
+          icon: Icons.arrow_upward, 
+          label: 'Expense',
+          onTap: () => AddTransactionSheet.show(context, 'expense'),
+        ),
+        _buildAction(
+          context, 
+          icon: Icons.arrow_downward, 
+          label: 'Income',
+          onTap: () => AddTransactionSheet.show(context, 'income'),
+        ),
+        _buildAction(context, icon: Icons.analytics, label: 'Analytics', onTap: () => context.go('/analytics')),
+        _buildAction(context, icon: Icons.grid_view, label: 'More', onTap: () {}),
+      ],
+    );
+  }
+
+  Widget _buildAction(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isDark ? KotiColors.darkIconBackground : KotiColors.lightIconBackground,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: isDark ? Colors.white : Colors.black),
+          ),
+          const SizedBox(height: KotiSpacing.s),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionList extends ConsumerWidget {
+  const _TransactionList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final transactionsAsync = ref.watch(transactionsProvider);
+
+    return transactionsAsync.when(
+      data: (transactions) {
+        if (transactions.isEmpty) {
+          return const Center(
+            child: Text(
+              'No transactions yet.\nAdd an expense or income to start tracking!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: KotiSpacing.l),
+          itemCount: transactions.length,
+          itemBuilder: (context, index) {
+            return _TransactionTile(transaction: transactions[index]);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: \$error')),
+    );
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  final Transaction transaction;
+
+  const _TransactionTile({required this.transaction});
+
+  @override
+  Widget build(BuildContext context) {
+    final isExpense = transaction.type == 'expense';
+    final amountPrefix = isExpense ? '-' : '+';
+    final amountColor = isExpense ? Colors.black : KotiColors.income;
+    final formattedAmount = NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(transaction.amount);
+    final formattedDate = DateFormat('d MMMM, yyyy').format(transaction.date);
+
+    // Retrieve the intelligent icon
+    IconData? icon;
+    if (transaction.iconCodePoint != null && transaction.fontFamily != null) {
+      icon = IconData(
+        transaction.iconCodePoint!,
+        fontFamily: transaction.fontFamily,
+        fontPackage: transaction.fontPackage,
+      );
+    } else {
+      icon = isExpense ? Icons.shopping_bag : Icons.account_balance_wallet;
+    }
+
+    return GestureDetector(
+      onTap: () => context.push('/transaction/${transaction.uuid}'),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: KotiSpacing.m),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(KotiSpacing.m),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: KotiRadii.roundedMedium,
+            ),
+            child: Icon(icon, color: Colors.black87),
+          ),
+          const SizedBox(width: KotiSpacing.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  transaction.description, 
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: KotiSpacing.xs),
+                Text(formattedDate, style: TextStyle(color: Colors.black.withValues(alpha: 0.5), fontSize: 13)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '\$amountPrefix\$formattedAmount', 
+                style: TextStyle(color: amountColor, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+              const SizedBox(height: KotiSpacing.xs),
+              Text(isExpense ? 'Expense' : 'Income', style: TextStyle(color: Colors.black.withValues(alpha: 0.5), fontSize: 13)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

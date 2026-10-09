@@ -1,0 +1,3 @@
+sed -i '' "s/final double balance = balanceAsync.valueOrNull ?? wallet.initialBalance;/final double balance = balanceAsync.valueOrNull ?? wallet.initialBalance;\n    final hideBalance = ref.watch(hideBalanceProvider);/g" lib/features/accounts/accounts_screen.dart
+sed -i '' "s/'\\\$currency\${balance.toStringAsFixed(2)}'/hideBalance ? '****' : '\\\$currency\${balance.toStringAsFixed(2)}'/g" lib/features/accounts/accounts_screen.dart
+sed -i '' 's/import '"'"'..\/..\/providers\/database_provider.dart'"'"';/import '"'"'..\/..\/providers\/database_provider.dart'"'"';\nimport '"'"'..\/..\/providers\/balance_providers.dart'"'"';/g' lib/features/accounts/accounts_screen.dart
