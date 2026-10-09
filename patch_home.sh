@@ -1,1 +1,0 @@
-sed -i '' 's/onPressed: () => ref.read(hideBalanceProvider.notifier).toggle(), \/\/ Optional: Add a full list screen later/onPressed: () => context.push('"'"'\/all-transactions'"'"'),/g' lib/features/home/home_screen.dart

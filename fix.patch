@@ -1,8 +1,0 @@
---- lib/features/home/home_screen.dart
-+++ lib/features/home/home_screen.dart
-@@ -298,4 +298,5 @@
-         ],
-       ),
-+      ),
-     );
-   }
